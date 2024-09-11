@@ -1,0 +1,114 @@
+// This code is was written by the Fluffy Terminators, FIRST Tech Challenge team 23369.
+// Everything outside of 2024-2025-master/Teamcode/src/main/java/org/firstinspires/ftc/teamcode was written and made by FIRST Global.
+// Using this code for your own robot is very unlikely to work.
+// You may freely copy this code
+
+
+
+package org.firstinspires.ftc.teamcode;
+
+// This chunk of code imports all the required packages.
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
+
+@TeleOp(name="MainRobot", group="2024-2025")
+@Disabled
+public class BasicOmniOpMode_Linear extends LinearOpMode {
+
+    // Declare OpMode members for each of the 4 motors.
+    private ElapsedTime runtime = new ElapsedTime();
+    private DcMotor leftFrontDrive = null;
+    private DcMotor leftBackDrive = null;
+    private DcMotor rightFrontDrive = null;
+    private DcMotor rightBackDrive = null;
+
+    @Override
+    public void runOpMode() {
+
+        // This chunck of code tells the rest of the code where to send the signals to based on the robot configuration.
+        leftFrontDrive = hardwareMap.get(DcMotor.class, "FLDrive");
+        leftBackDrive = hardwareMap.get(DcMotor.class, "BLDrive");
+        rightFrontDrive = hardwareMap.get(DcMotor.class, "FRDrive");
+        rightBackDrive = hardwareMap.get(DcMotor.class, "BRDrive");
+
+        // This chunck of code sets the directions for LFD and LBD to backwards so that our mecanum drive train works properly.
+        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
+        rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
+
+        telemetry.addData("State", "New South Wales");
+        telemetry.addData("Robot State", "Initialised. Waiting for match  to start.");
+        telemetry.update();
+
+        waitForStart();
+        runtime.reset();
+
+        while (opModeIsActive()) {
+            double max;
+
+            double axial   = -gamepad1.left_stick_y;  // This line checks how far forward or backward the left joystick is pushed. Note: pushing stick forward gives negative value.
+            double lateral =  gamepad1.left_stick_x; // This line checks how far left or right the left joystick is pushed.
+            double yaw     =  gamepad1.right_stick_x; // This line checks how far left or right the right joystick is pushed.
+
+            // This chunck of code adds or subtracts together the variables that are determined by the joysticks.
+            // Technically speaking, you could just use the raw joystick values in place of the variables, but it's easier to use the variable as this means we can easily use the joystick values later in the code.
+            // It also allows you to read the code easier (subjectively).
+
+            double leftFrontPower  = axial + lateral + yaw;
+            double rightFrontPower = axial - lateral - yaw;
+            double leftBackPower   = axial - lateral + yaw;
+            double rightBackPower  = axial + lateral - yaw;
+
+            // Normalize the values so no wheel power exceeds 100%
+            // This ensures that the robot maintains the desired motion.
+            max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
+            max = Math.max(max, Math.abs(leftBackPower));
+            max = Math.max(max, Math.abs(rightBackPower));
+
+            if (max > 1.0) {
+                leftFrontPower  /= max;
+                rightFrontPower /= max;
+                leftBackPower   /= max;
+                rightBackPower  /= max;
+            }
+
+            // This is test code:
+            //
+            // Uncomment the following code to test your motor directions.
+            // Each button should make the corresponding motor run FORWARD.
+            //   1) First get all the motors to take to correct positions on the robot
+            //      by adjusting your Robot Configuration if necessary.
+            //   2) Then make sure they run in the correct direction by modifying the
+            //      the setDirection() calls above.
+            // Once the correct motors move in the correct direction re-comment this code.
+
+            /*
+            leftFrontPower  = gamepad1.x ? 1.0 : 0.0;  // X gamepad
+            leftBackPower   = gamepad1.a ? 1.0 : 0.0;  // A gamepad
+            rightFrontPower = gamepad1.y ? 1.0 : 0.0;  // Y gamepad
+            rightBackPower  = gamepad1.b ? 1.0 : 0.0;  // B gamepad
+            */
+
+            // Send calculated power to wheels
+            leftFrontDrive.setPower(leftFrontPower);
+            rightFrontDrive.setPower(rightFrontPower);
+            leftBackDrive.setPower(leftBackPower);
+            rightBackDrive.setPower(rightBackPower);
+
+            // Show the elapsed game time and wheel power.
+            telemetry.addData("Status", "Run Time: " + runtime.toString());
+            telemetry.addData("Front left/Right", "%4.2f, %4.2f", leftFrontPower, rightFrontPower);
+            telemetry.addData("Back  left/Right", "%4.2f, %4.2f", leftBackPower, rightBackPower);
+            telemetry.update();
+
+            }
+        }
+    }}
+
+
+    }
